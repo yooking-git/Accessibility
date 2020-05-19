@@ -20,6 +20,8 @@ import com.yooking.accessibility.assignment.AssignmentFactory;
 import com.yooking.accessibility.intent.IntentUtils;
 import com.yooking.accessibility.permission.FloatPermissionUtils;
 import com.yooking.accessibility.widget.FloatWindowView;
+import com.yooking.lib.assignment.Factory;
+import com.yooking.lib.assignment.entity.StepEntity;
 import com.yooking.lib.utils.L;
 
 import java.util.List;
@@ -152,10 +154,29 @@ public class MainActivity extends AppCompatActivity {
             handler.postDelayed(() -> {
                 FloatWindowView.getInstance().showFloatWindow();
                 //开启任务
-                handler.postDelayed(
-                        () -> AssignmentFactory.run(MainActivity.this, AssignmentFactory.create()),
-                        LONG_SLEEP
-                );
+                handler.postDelayed(() -> AssignmentFactory.getInstance().run(AssignmentFactory.getInstance().defCreate(), new Factory.SetPollCallback() {
+                    @Override
+                    public void poll(int position, int size, StepEntity step) {
+                        L.i("总进度：" + size
+                                + "，当前进度：" + position
+                                + "，当前事务名：" + step.getName()
+                                + "，当前队列名：" + step.getParentName()
+                        );
+
+                        if (position == 1) {
+                            FloatWindowView.getInstance().progressBar.setMax(size);
+                        }
+                        FloatWindowView.getInstance().setProgressBar(position);
+
+                        AssignmentFactory.getInstance().defPoll(MainActivity.this, step);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        FloatWindowView.getInstance().stopFloatWindow();
+                    }
+                }), LONG_SLEEP);
+
             }, SHORT_SLEEP);
         }
     }

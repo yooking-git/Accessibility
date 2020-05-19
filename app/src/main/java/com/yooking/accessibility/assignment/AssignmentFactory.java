@@ -1,94 +1,40 @@
 package com.yooking.accessibility.assignment;
 
-import android.app.Activity;
-import android.os.SystemClock;
-
 import com.yooking.accessibility.BaseApplication;
-import com.yooking.accessibility.MyAccessibilityService;
 import com.yooking.accessibility.intent.IntentUtils;
 import com.yooking.accessibility.permission.rom.RomUtils;
-import com.yooking.accessibility.widget.FloatWindowView;
+import com.yooking.lib.assignment.Factory;
 import com.yooking.lib.assignment.StepHelper;
 import com.yooking.lib.assignment.entity.AssignmentEntity;
-import com.yooking.lib.assignment.entity.StepEntity;
 import com.yooking.lib.utils.L;
 
 import java.util.LinkedList;
 import java.util.Queue;
-
-import io.reactivex.Observable;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 /**
  * 任务工厂
  * Created by yooking on 2020/5/7.
  * Copyright (c) 2020 yooking. All rights reserved.
  */
-public class AssignmentFactory {
+public class AssignmentFactory extends Factory {
 
-    private static final int POST_DELAY_MILLIS = 1500;
 
-    public static void run(Activity activity, Queue<AssignmentEntity> queue) {
-        L.i("队列开始执行");
-        int assignmentSize = queue.size();
-
-        CompositeDisposable co = new CompositeDisposable();
-        Disposable subscribe = Observable.create(
-                (ObservableOnSubscribe<AssignmentEntity>) emitter -> {
-                    int progressSize = 0;
-                    for (int i = 0; i < assignmentSize; i++) {
-                        AssignmentEntity entity = queue.poll();
-                        if (entity != null) {
-                            Queue<StepEntity> stepQueue = entity.getQueue();
-                            if (stepQueue != null) {
-                                int stepSize = stepQueue.size();
-                                for (int j = 0; j < stepSize; j++) {
-                                    progressSize++;
-                                    emitter.onNext(entity);
-                                }
-                            }
-                        }
-                    }
-                    FloatWindowView.getInstance().progressBar.setMax(progressSize);
-                    emitter.onComplete();
-                })
-                .subscribeOn(Schedulers.io())//执行在io线程
-                .observeOn(Schedulers.io())//回调在io线程  //主线程阻塞将无法更新ui AndroidSchedulers.mainThread()
-                .subscribe(
-                        assignment -> {
-                            FloatWindowView.getInstance().progressAdd();
-                            L.i("当前进度：" + assignment.getName() + "===" + FloatWindowView.getInstance().getProgress());
-                            poll(activity, assignment.getQueue().poll());
-                        },
-                        throwable -> L.e("", throwable),
-                        () -> FloatWindowView.getInstance().stopFloatWindow()
-                );
-        co.add(subscribe);
-    }
-
-    private static void poll(Activity activity, StepEntity poll) {
-        if (poll == null) return;
-        switch (poll.getType()) {
-            case StepEntity.TYPE_INTENT://跳转事件
-                activity.startActivity(poll.getIntent());
-                break;
-            case StepEntity.TYPE_CLICK://点击事件
-                MyAccessibilityService.getInstance().clickFirstView(poll.getName());
-                break;
-            case StepEntity.TYPE_CHECKED://选中事件
-                MyAccessibilityService.getInstance().clickCheckBox(poll.getName(), poll.isChecked());
-                break;
-            case StepEntity.TYPE_BACK://返回事件
-                MyAccessibilityService.getInstance().goBack();
-                break;
+    private static AssignmentFactory instance;
+    public static synchronized AssignmentFactory getInstance() {
+        if (instance == null) {
+            instance = new AssignmentFactory();
         }
-        SystemClock.sleep(POST_DELAY_MILLIS);
+        return instance;
     }
 
-    public static Queue<AssignmentEntity> create() {
+
+    @Override
+    public long getDuration() {
+        return 1500;
+    }
+
+    @Override
+    public Queue<AssignmentEntity> defCreate() {
         Queue<AssignmentEntity> queue = new LinkedList<>();
         if (RomUtils.isHuawei()) {
             queue.addAll(HuaweiFactory.create());

@@ -86,7 +86,6 @@ public class FloatWindowView {
             try {
                 if (!(manager == null || layoutView == null) && isShow) {
                     manager.removeViewImmediate(layoutView);
-
                     isShow = false;
                 }
                 L.i("悬浮窗已关闭");
@@ -108,6 +107,11 @@ public class FloatWindowView {
 
     public void progressAdd() {
         progress++;
+        setFloatProgress(progress);
+    }
+
+    public void setProgressBar(int progress){
+        this.progress = progress;
         setFloatProgress(progress);
     }
 

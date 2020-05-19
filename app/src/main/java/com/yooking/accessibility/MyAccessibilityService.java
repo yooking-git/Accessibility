@@ -13,12 +13,6 @@ import com.yooking.lib.utils.L;
  */
 public class MyAccessibilityService extends BaseAccessibilityService {
 
-    private volatile static MyAccessibilityService mService;
-
-    public static MyAccessibilityService getInstance() {
-        return mService;
-    }
-
     public static final String ACTION_NAME = "MyAccessibilityService";
     public static final String BROADCAST_KEY = "key";
 
